@@ -26,15 +26,18 @@ package com.ibm.jit;
 import com.ibm.oti.vm.J9UnmodifiableClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import com.ibm.oti.vm.VM;
 /*[IF JAVA_SPEC_VERSION >= 9]
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.MethodAccessor;
 /*[ELSE] JAVA_SPEC_VERSION >= 9 */
 import sun.misc.Unsafe;
-import sun.reflect.Reflection;
 import sun.reflect.CallerSensitive;
+import sun.reflect.MethodAccessor;
+import sun.reflect.Reflection;
 /*[ENDIF] JAVA_SPEC_VERSION >= 9 */
 
 /**
@@ -1186,4 +1189,24 @@ public final class JITHelpers {
 	public static native void dispatchComputedStaticCall();
 
 	public static native void dispatchVirtual();
+
+	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
+
+	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
+		try {
+			return ma.invoke(obj, args);
+		} catch (InvocationTargetException e) {
+			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.AssertionError")) {
+				// TODO: Need synchronization to prevent many threads entering here
+				System.err.println("Caught org.opentest4j.AssertionFailedError inside JITHelpers");
+
+				debugAgentRun(ma, obj, args);
+				
+				System.err.println("Aborting JVM");
+				System.exit(1);
+			}
+
+			throw e;
+		}
+	}
 }
