@@ -244,7 +244,7 @@ debugAgentRevertToInterpreter(J9VMThread* vmThread, J9JITExceptionTable *jitMeth
     }
 
 extern J9_CFUNC BOOLEAN
-debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA lastOptIndex, IDATA lastOptSubIndex, BOOLEAN enableTracing)
+debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA lastOptIndex, IDATA lastOptSubIndex, BOOLEAN enableTracing, BOOLEAN goodLog)
     {
     J9JITConfig *jitConfig = vmThread->javaVM->jitConfig;
     if (NULL == jitConfig)
@@ -297,7 +297,24 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
         }
 
     plan->setInsertInstrumentation(bodyInfo->getIsProfilingBody());
-    // plan->setLogCompilation(jitdumpFile);
+
+    char *fileName = "goodJitCompilationLog_opt_index_";
+    if (!goodLog)
+    {
+        fileName = "badJitCompilationLog_opt_index_";
+    }
+    char *lastOptIndexString = (char *)j9mem_allocate_memory(10, OMRMEM_CATEGORY_VM);
+    sprintf(lastOptIndexString, "%d", (int)lastOptIndex);
+    char *log = ".log";
+    char *fileNameWithLastOptIndex = (char *)j9mem_allocate_memory(strlen(fileName) + strlen(lastOptIndexString) + strlen(log) + 1, OMRMEM_CATEGORY_VM);
+    sprintf(fileNameWithLastOptIndex, "%s%s%s", fileName, lastOptIndexString, log);
+            
+    TR::FILE *jitCompilationLog = enableTracing ? trfopen(fileNameWithLastOptIndex, "ab", false) : NULL;
+    if (enableTracing)
+    {
+        plan->setLogCompilation(jitCompilationLog);
+        TR::Options::getCmdLineOptions()->setOption(TR_TraceAll);
+    }
 
     TR::Options::getCmdLineOptions()->setLastOptIndex(lastOptIndex);
     TR::Options::getCmdLineOptions()->setLastOptSubIndex(lastOptSubIndex);
@@ -310,6 +327,11 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
     auto rc = compilationOK;
     auto queued = false;
     compInfo->compileMethod(vmThread, details, pc, TR_no, &rc, &queued, plan);
+    if (enableTracing)
+    {
+        trfflush(jitCompilationLog);
+        trfclose(jitCompilationLog);
+    }
 
     vmThread->javaVM->internalVMFunctions->internalReleaseVMAccess(vmThread);
 
