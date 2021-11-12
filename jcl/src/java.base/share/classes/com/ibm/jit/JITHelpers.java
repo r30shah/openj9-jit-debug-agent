@@ -50,6 +50,7 @@ public final class JITHelpers {
 
 	private static final JITHelpers helpers;
 	private static final Unsafe unsafe;
+	private static java.util.HashMap<String, Class<? extends Throwable>> exceptionMap;
 
 	private JITHelpers() {
 	}
@@ -67,6 +68,49 @@ public final class JITHelpers {
 	 */
 	private static JITHelpers jitHelpers() {
 		return helpers;
+	}
+
+	/*
+	 * Public methods to provide access to expected exception
+	 */
+
+	public static void setExpectedException(Class<? extends Throwable> expectedException) {
+		Thread currentThread = Thread.currentThread();
+		String vmThreadName = currentThread.getName();
+		initExceptionMap();
+		
+		if (expectedException == null) {
+			System.out.println("Removing exception for thread: " + vmThreadName);
+			exceptionMap.remove(vmThreadName);
+		}
+		else {
+			System.out.println("Setting expected exception for " + vmThreadName);
+			exceptionMap.put(vmThreadName, expectedException);
+		}
+	}
+	public static Class<? extends Throwable> getExpectedException() {
+		Thread currentThread = Thread.currentThread();
+		if(exceptionMap == null) {
+			return null;
+		}
+		return exceptionMap.get(currentThread.getName());
+	}
+
+	/*
+	 * Public methods to instantiate and destroy exceptionMap
+	 */
+
+	public static void initExceptionMap() {
+		if (exceptionMap == null) {
+			exceptionMap = new java.util.HashMap<String, Class<? extends Throwable>>();
+		}
+	}
+
+	public static void destroyExceptionMap() {
+		if (exceptionMap != null) {
+			exceptionMap.clear();
+			exceptionMap = null;
+		}
 	}
 
 	public native int transformedEncodeUTF16Big(long src, long dest, int num);
@@ -1185,13 +1229,29 @@ public final class JITHelpers {
 			return ma.invoke(obj, args);
 		} catch (InvocationTargetException e) {
 			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.NullPointerException")) {
-				// TODO: Need synchronization to prevent many threads entering here
-				System.err.println("Caught java.lang.NullPointerException inside JITHelpers");
+				Class < ? extends Throwable > expected = com.ibm.jit.JITHelpers.getExpectedException();
+				boolean runDebugAgent = true;
+				if (expected != null) {
+					Throwable targetException = e.getTargetException();
+					if (!expected.isAssignableFrom(targetException.getClass())) {
+						String message = "From JITHelpers.invoke - Unexpected exception, expected<" +
+							expected.getName() + "> but was<" +
+							targetException.getClass().getName() + ">";
+						System.out.println(message);
+					} else {
+						runDebugAgent = false;
+					}
+				}
+				if (runDebugAgent) {
+					synchronized (JITHelpers.class) {
+						System.err.println("Caught java.lang.NullPointerException inside JITHelpers");
 
-				debugAgentRun(ma, obj, args);
+						debugAgentRun(ma, obj, args);
 				
-				System.err.println("Aborting JVM");
-				System.exit(1);
+						System.err.println("Aborting JVM");
+						System.exit(1);
+					}
+				}
 			}
 
 			throw e;
