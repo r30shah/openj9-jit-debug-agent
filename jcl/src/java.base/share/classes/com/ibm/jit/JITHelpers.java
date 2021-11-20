@@ -100,7 +100,7 @@ public final class JITHelpers {
 	 * Public methods to instantiate and destroy exceptionMap
 	 */
 
-	public static void initExceptionMap() {
+	public synchronized static void initExceptionMap() {
 		if (exceptionMap == null) {
 			exceptionMap = new java.util.HashMap<String, Class<? extends Throwable>>();
 		}
