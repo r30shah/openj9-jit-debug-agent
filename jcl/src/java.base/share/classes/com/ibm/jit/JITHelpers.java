@@ -1244,8 +1244,8 @@ public final class JITHelpers {
 				}
 				if (runDebugAgent) {
 					synchronized (JITHelpers.class) {
-						System.err.println("Caught java.lang.NullPointerException inside JITHelpers");
-
+						System.err.println("Caught java.lang.NullPointerException inside JITHelpers, thread "+Thread.currentThread().getName());
+						e.getCause().printStackTrace();
 						debugAgentRun(ma, obj, args);
 				
 						System.err.println("Aborting JVM");
