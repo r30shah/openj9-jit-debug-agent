@@ -80,11 +80,9 @@ public final class JITHelpers {
 		initExceptionMap();
 		
 		if (expectedException == null) {
-			System.out.println("Removing exception for thread: " + vmThreadName);
 			exceptionMap.remove(vmThreadName);
 		}
 		else {
-			System.out.println("Setting expected exception for " + vmThreadName);
 			exceptionMap.put(vmThreadName, expectedException);
 		}
 	}
