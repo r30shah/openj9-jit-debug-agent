@@ -42,4 +42,7 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
 extern J9_CFUNC BOOLEAN
 debugAgentEnd(J9VMThread* vmThread);
 
+extern J9_CFUNC void
+setForcePreExistence(J9VMThread* vmThread);
+
 #endif

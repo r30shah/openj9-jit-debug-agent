@@ -1220,6 +1220,11 @@ public final class JITHelpers {
 
 	public static native void dispatchVirtual();
 
+	private native static final void setForcePreExistence();
+
+	public static void setForcePreexistenceThroughAgent() {
+		setForcePreExistence();
+	}
 	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
 
 	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
