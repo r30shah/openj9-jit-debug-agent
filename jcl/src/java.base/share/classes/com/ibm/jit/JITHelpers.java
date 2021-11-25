@@ -50,7 +50,7 @@ public final class JITHelpers {
 
 	private static final JITHelpers helpers;
 	private static final Unsafe unsafe;
-	private static java.util.HashMap<String, Class<? extends Throwable>> exceptionMap;
+	private static java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>> exceptionMap;
 
 	private JITHelpers() {
 	}
@@ -100,7 +100,7 @@ public final class JITHelpers {
 
 	public synchronized static void initExceptionMap() {
 		if (exceptionMap == null) {
-			exceptionMap = new java.util.HashMap<String, Class<? extends Throwable>>();
+			exceptionMap = new java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>>();
 		}
 	}
 
