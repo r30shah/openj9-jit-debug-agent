@@ -36,8 +36,9 @@
 #include <set>
 
 void
-setForcePreExistence(J9VMThread* vmThread){
-    TR::Options::getCmdLineOptions()->setForceUsePreexistence();
+setForcePreExistence(J9VMThread* vmThread)
+{
+    TR::Options::getOption(TR_ForceUsePreexistence);
 }
 
 
