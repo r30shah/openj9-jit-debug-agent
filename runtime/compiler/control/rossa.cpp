@@ -1891,6 +1891,7 @@ onLoadInternal(
    jitConfig->debugAgentRevertToInterpreter = debugAgentRevertToInterpreter;
    jitConfig->debugAgentRecompile = debugAgentRecompile;
    jitConfig->debugAgentEnd = debugAgentEnd;
+   jitConfig->debugAgentSetForceUsePreexistence = debugAgentSetForceUsePreexistence;
    
    jitConfig->printAOTHeaderProcessorFeatures = printAOTHeaderProcessorFeatures;
 
