@@ -301,6 +301,11 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
         j9nls_printf(PORTLIB, J9NLS_INFO | J9NLS_STDERR, J9NLS_DMP_JIT_OPTIMIZATION_PLAN);
         return false;
         }
+    // Experiment to clone the plan
+    if (bodyIndo->getOptimizationPlan() != NULL)
+        {
+        plan->clone(bodyInfo->getOptimizationPlan());
+        }
 
     plan->setInsertInstrumentation(bodyInfo->getIsProfilingBody());
 
