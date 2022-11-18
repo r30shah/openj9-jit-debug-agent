@@ -302,9 +302,9 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
         return false;
         }
     // Experiment to clone the plan
-    if (bodyInfo->getOptimizationPlan() != NULL)
+    if (bodyInfo->getMethodInfo()->getOptimizationPlan() != NULL)
         {
-        plan->clone(bodyInfo->getOptimizationPlan());
+        plan->clone(bodyInfo->getMethodInfo()->getOptimizationPlan());
         }
 
     plan->setInsertInstrumentation(bodyInfo->getIsProfilingBody());
