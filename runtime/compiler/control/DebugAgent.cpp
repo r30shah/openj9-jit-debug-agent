@@ -304,6 +304,7 @@ debugAgentRecompile(J9VMThread* vmThread, J9JITExceptionTable *jitMethod, IDATA 
     // Experiment to clone the plan
     if (bodyInfo->getMethodInfo()->getOptimizationPlan() != NULL)
         {
+        printf("RAHIL: Cloning flags from old plan\n");
         plan->clone(bodyInfo->getMethodInfo()->getOptimizationPlan());
         }
 
