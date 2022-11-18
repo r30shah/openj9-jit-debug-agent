@@ -159,7 +159,7 @@ class TR_PersistentMethodInfo
 
    bool doesntKillAnything() { return _flags.testAll(RefinedAliasesMask); }
 
-   bool setNPEBugForDemo(bool b=true) { _flags.set(NPEBugForDemo, b); }
+   void setNPEBugForDemo(bool b=true) { _flags.set(NPEBugForDemo, b); }
    bool getNPEBugForDemo() { return _flags.testAll(NPEBugForDemo); }
 
 
