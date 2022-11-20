@@ -159,10 +159,6 @@ class TR_PersistentMethodInfo
 
    bool doesntKillAnything() { return _flags.testAll(RefinedAliasesMask); }
 
-   void setNPEBugForDemo(bool b=true) { _flags.set(NPEBugForDemo, b); }
-   bool getNPEBugForDemo() { return _flags.testAll(NPEBugForDemo); }
-
-
    // Accessor methods for the "cpoCounter".  This does not really
    // need to be its own counter, as it is conceptually the same as
    // "_counter".  However, the original _counter is still during instrumentation, so
@@ -251,7 +247,6 @@ class TR_PersistentMethodInfo
                                                        // Attention: this is not always accurate
       WasScannedForInlining                = 0x00400000, // New scanning for warm method inlining
       IsInDataCache                        = 0x00800000, // This TR_PersistentMethodInfo is stored in the datacache for AOT
-      NPEBugForDemo                        = 0x01000000,
       lastFlag                             = 0x80000000
       };
 
