@@ -1228,24 +1228,26 @@ public final class JITHelpers {
 	public static native void setForceUsePreexistence();
 
 	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
-
-
-	public static Object invoke(MethodAccessor ma, Object obj, Objects[] args) throws InvocationTargetException {
+	
+	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
 		try {
 			return ma.invoke(obj, args);
 		} catch (InvocationTargetException e) {
 			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.StringIndexOutOfBoundsException")) {
 				synchronized (JITHelpers.class) {
-					System.err.println("Caught java.lang.StringIndexOutOfBoundsException inside JITHelpers, thread "+Thread.currentThread().getName());
+					System.err.println("Caught java.lang.NullPointerException inside JITHelpers, thread "+Thread.currentThread().getName());
 					e.getCause().printStackTrace();
 					debugAgentRun(ma, obj, args);
+				
 					System.err.println("Aborting JVM");
 					System.exit(1);
 				}
 			}
+			throw e;
 		}
-		return null;
 	}
+	*/
+}
 	/**
 	 * Invokes the method on the object with the given MethodAccessor and arguments.
 	 * If the method throws an exception, it is caught and if the exception is unexpected,
