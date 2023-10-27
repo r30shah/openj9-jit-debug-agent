@@ -28,6 +28,8 @@ import com.ibm.oti.vm.J9UnmodifiableClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
+
 import com.ibm.oti.vm.VM;
 /*[IF Sidecar19-SE]
 import jdk.internal.misc.Unsafe;
@@ -1227,6 +1229,22 @@ public final class JITHelpers {
 
 	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
 
+
+	public static Object invoke(MethodAccessor ma, Object obj, Objects[] args) throws InvocationTargetException {
+		try {
+			return ma.invoke(obj, args);
+		} catch (InvocationTargetException e) {
+			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.StringIndexOutOfBoundsException")) {
+				synchronized (JITHelpers.class) {
+					System.err.println("Caught java.lang.StringIndexOutOfBoundsException inside JITHelpers, thread "+Thread.currentThread().getName());
+					e.getCause().printStackTrace();
+					debugAgentRun(ma, obj, args);
+					System.err.println("Aborting JVM");
+					System.exit(1);
+				}
+			}
+		}
+	}
 	/**
 	 * Invokes the method on the object with the given MethodAccessor and arguments.
 	 * If the method throws an exception, it is caught and if the exception is unexpected,
@@ -1236,7 +1254,7 @@ public final class JITHelpers {
 	 * @param obj the underlying object.
 	 * @param args the arguments for the method
 	 * @return the return value of the method
-	 */
+	 *
 	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
 		try {
 			return ma.invoke(obj, args);
@@ -1270,4 +1288,5 @@ public final class JITHelpers {
 			throw e;
 		}
 	}
+	*/
 }
