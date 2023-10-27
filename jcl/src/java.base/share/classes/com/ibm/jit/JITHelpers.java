@@ -1246,7 +1246,6 @@ public final class JITHelpers {
 			throw e;
 		}
 	}
-	*/
 }
 	/**
 	 * Invokes the method on the object with the given MethodAccessor and arguments.
@@ -1292,4 +1291,3 @@ public final class JITHelpers {
 		}
 	}
 	*/
-}
