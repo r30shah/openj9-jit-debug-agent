@@ -1,4 +1,3 @@
-
 /*[INCLUDE-IF Sidecar17]*/
 
 package com.ibm.jit;
