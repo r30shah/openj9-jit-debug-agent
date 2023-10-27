@@ -27,8 +27,8 @@ package com.ibm.jit;
 import com.ibm.oti.vm.J9UnmodifiableClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
 import com.ibm.oti.vm.VM;
+import java.lang.reflect.InvocationTargetException;
 /*[IF Sidecar19-SE]
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.Reflection;
@@ -36,9 +36,9 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.MethodAccessor;
 /*[ELSE]*/
 import sun.misc.Unsafe;
+import sun.reflect.Reflection;
 import sun.reflect.CallerSensitive;
 import sun.reflect.MethodAccessor;
-import sun.reflect.Reflection;
 /*[ENDIF]*/
 
 /**
@@ -50,7 +50,6 @@ public final class JITHelpers {
 
 	private static final JITHelpers helpers;
 	private static final Unsafe unsafe;
-	private static java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>> exceptionMap;
 
 	private JITHelpers() {
 	}
@@ -68,50 +67,6 @@ public final class JITHelpers {
 	 */
 	private static JITHelpers jitHelpers() {
 		return helpers;
-	}
-
-	/**
-	 * Set the expected exception for the current thread.
-	 * Initializes the exceptionMap if necessary.
-	 * 
-	 * @param expectedException The class of the expected exception.
-	 */
-
-	public static void setExpectedException(Class<? extends Throwable> expectedException) {
-		Thread currentThread = Thread.currentThread();
-		String vmThreadName = currentThread.getName();
-		initExceptionMap();
-		
-		if (expectedException == null) {
-			exceptionMap.remove(vmThreadName);
-		}
-		else {
-			exceptionMap.put(vmThreadName, expectedException);
-		}
-	}
-
-	/**
-	 * Get the expected exception for the current thread.
-	 * 
-	 * @return The class of the expected exception.
-	 */
-
-	public static Class<? extends Throwable> getExpectedException() {
-		Thread currentThread = Thread.currentThread();
-		if(exceptionMap == null) {
-			return null;
-		}
-		return exceptionMap.get(currentThread.getName());
-	}
-
-	/**
-	 * Synchronized method to instantiate an exceptionMap if it does not exist
-	 */
-
-	public synchronized static void initExceptionMap() {
-		if (exceptionMap == null) {
-			exceptionMap = new java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>>();
-		}
 	}
 
 	public native int transformedEncodeUTF16Big(long src, long dest, int num);
@@ -464,6 +419,30 @@ public final class JITHelpers {
 
 	public void putObjectInArrayVolatile(Object obj, long offset, Object value) {
 		unsafe.putObjectVolatile(obj, offset, value);
+	}
+
+	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
+
+	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
+		try {
+			return ma.invoke(obj, args);
+		} catch (InvocationTargetException e) {
+			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.StringIndexOutOfBoundsException")) {
+				boolean runDebugAgent = true;
+				if (runDebugAgent) {
+					synchronized (JITHelpers.class) {
+						System.err.println("Caught java.lang.StringIndexOutOfBoundsException inside JITHelpers, thread "+Thread.currentThread().getName());
+						e.getCause().printStackTrace();
+						debugAgentRun(ma, obj, args);
+				
+						System.err.println("Aborting JVM");
+						System.exit(1);
+					}
+				}
+			}
+
+			throw e;
+		}
 	}
 
 	public boolean compareAndSwapIntInArray(Object obj, long offset, int expected, int value) {
@@ -1222,52 +1201,4 @@ public final class JITHelpers {
 	public static native void dispatchComputedStaticCall();
 
 	public static native void dispatchVirtual();
-
-	public static native void setForceUsePreexistence();
-
-	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
-
-	/**
-	 * Invokes the method on the object with the given MethodAccessor and arguments.
-	 * If the method throws an exception, it is caught and if the exception is unexpected,
-	 * the debug agent triggered.
-	 * 
-	 * @param ma the method to run the debug agent on.
-	 * @param obj the underlying object.
-	 * @param args the arguments for the method
-	 * @return the return value of the method
-	 */
-	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
-		try {
-			return ma.invoke(obj, args);
-		} catch (InvocationTargetException e) {
-			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.NullPointerException")) {
-				Class < ? extends Throwable > expected = com.ibm.jit.JITHelpers.getExpectedException();
-				boolean runDebugAgent = true;
-				if (expected != null) {
-					Throwable targetException = e.getTargetException();
-					if (!expected.isAssignableFrom(targetException.getClass())) {
-						String message = "From JITHelpers.invoke - Unexpected exception, expected<" +
-							expected.getName() + "> but was<" +
-							targetException.getClass().getName() + ">";
-						System.out.println(message);
-					} else {
-						runDebugAgent = false;
-					}
-				}
-				if (runDebugAgent) {
-					synchronized (JITHelpers.class) {
-						System.err.println("Caught java.lang.NullPointerException inside JITHelpers, thread "+Thread.currentThread().getName());
-						e.getCause().printStackTrace();
-						debugAgentRun(ma, obj, args);
-				
-						System.err.println("Aborting JVM");
-						System.exit(1);
-					}
-				}
-			}
-
-			throw e;
-		}
-	}
 }
