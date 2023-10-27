@@ -28,6 +28,7 @@ import com.ibm.oti.vm.J9UnmodifiableClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 import com.ibm.oti.vm.VM;
+import java.lang.reflect.InvocationTargetException;
 /*[IF Sidecar19-SE]
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.Reflection;
