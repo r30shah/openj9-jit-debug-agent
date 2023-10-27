@@ -1,9 +1,10 @@
+
 /*[INCLUDE-IF Sidecar17]*/
 
 package com.ibm.jit;
 
 /*******************************************************************************
- * Copyright (c) 1998, 2021 IBM Corp. and others
+ * Copyright IBM Corp. and others 1998
  *
  * This program and the accompanying materials are made available under
  * the terms of the Eclipse Public License 2.0 which accompanies this
@@ -21,7 +22,7 @@ package com.ibm.jit;
  * [1] https://www.gnu.org/software/classpath/license.html
  * [2] https://openjdk.org/legal/assembly-exception.html
  *
- * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
  *******************************************************************************/
 
 import com.ibm.oti.vm.J9UnmodifiableClass;
@@ -36,9 +37,9 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.MethodAccessor;
 /*[ELSE]*/
 import sun.misc.Unsafe;
+import sun.reflect.Reflection;
 import sun.reflect.CallerSensitive;
 import sun.reflect.MethodAccessor;
-import sun.reflect.Reflection;
 /*[ENDIF]*/
 
 /**
@@ -50,7 +51,6 @@ public final class JITHelpers {
 
 	private static final JITHelpers helpers;
 	private static final Unsafe unsafe;
-	private static java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>> exceptionMap;
 
 	private JITHelpers() {
 	}
@@ -68,50 +68,6 @@ public final class JITHelpers {
 	 */
 	private static JITHelpers jitHelpers() {
 		return helpers;
-	}
-
-	/**
-	 * Set the expected exception for the current thread.
-	 * Initializes the exceptionMap if necessary.
-	 * 
-	 * @param expectedException The class of the expected exception.
-	 */
-
-	public static void setExpectedException(Class<? extends Throwable> expectedException) {
-		Thread currentThread = Thread.currentThread();
-		String vmThreadName = currentThread.getName();
-		initExceptionMap();
-		
-		if (expectedException == null) {
-			exceptionMap.remove(vmThreadName);
-		}
-		else {
-			exceptionMap.put(vmThreadName, expectedException);
-		}
-	}
-
-	/**
-	 * Get the expected exception for the current thread.
-	 * 
-	 * @return The class of the expected exception.
-	 */
-
-	public static Class<? extends Throwable> getExpectedException() {
-		Thread currentThread = Thread.currentThread();
-		if(exceptionMap == null) {
-			return null;
-		}
-		return exceptionMap.get(currentThread.getName());
-	}
-
-	/**
-	 * Synchronized method to instantiate an exceptionMap if it does not exist
-	 */
-
-	public synchronized static void initExceptionMap() {
-		if (exceptionMap == null) {
-			exceptionMap = new java.util.concurrent.ConcurrentHashMap<String, Class<? extends Throwable>>();
-		}
 	}
 
 	public native int transformedEncodeUTF16Big(long src, long dest, int num);
@@ -1222,21 +1178,8 @@ public final class JITHelpers {
 	public static native void dispatchComputedStaticCall();
 
 	public static native void dispatchVirtual();
-
-	public static native void setForceUsePreexistence();
-
 	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
 
-	/**
-	 * Invokes the method on the object with the given MethodAccessor and arguments.
-	 * If the method throws an exception, it is caught and if the exception is unexpected,
-	 * the debug agent triggered.
-	 * 
-	 * @param ma the method to run the debug agent on.
-	 * @param obj the underlying object.
-	 * @param args the arguments for the method
-	 * @return the return value of the method
-	 */
 	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
 		try {
 			return ma.invoke(obj, args);
@@ -1259,3 +1202,4 @@ public final class JITHelpers {
 		}
 	}
 }
+
