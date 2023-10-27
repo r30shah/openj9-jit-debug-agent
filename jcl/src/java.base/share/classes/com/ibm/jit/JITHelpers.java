@@ -1244,6 +1244,7 @@ public final class JITHelpers {
 				}
 			}
 		}
+		return null;
 	}
 	/**
 	 * Invokes the method on the object with the given MethodAccessor and arguments.
