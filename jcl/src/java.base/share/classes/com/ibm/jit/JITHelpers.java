@@ -3,7 +3,7 @@
 package com.ibm.jit;
 
 /*******************************************************************************
- * Copyright IBM Corp. and others 1998
+ * Copyright (c) 1998, 2021 IBM Corp. and others
  *
  * This program and the accompanying materials are made available under
  * the terms of the Eclipse Public License 2.0 which accompanies this
@@ -21,15 +21,13 @@ package com.ibm.jit;
  * [1] https://www.gnu.org/software/classpath/license.html
  * [2] https://openjdk.org/legal/assembly-exception.html
  *
- * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception
  *******************************************************************************/
 
 import com.ibm.oti.vm.J9UnmodifiableClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Objects;
-
 import com.ibm.oti.vm.VM;
 /*[IF Sidecar19-SE]
 import jdk.internal.misc.Unsafe;
@@ -1228,21 +1226,35 @@ public final class JITHelpers {
 	public static native void setForceUsePreexistence();
 
 	private native static final void debugAgentRun(MethodAccessor ma, Object obj, Object[] args);
-	
+
+	/**
+	 * Invokes the method on the object with the given MethodAccessor and arguments.
+	 * If the method throws an exception, it is caught and if the exception is unexpected,
+	 * the debug agent triggered.
+	 * 
+	 * @param ma the method to run the debug agent on.
+	 * @param obj the underlying object.
+	 * @param args the arguments for the method
+	 * @return the return value of the method
+	 */
 	public static Object invoke(MethodAccessor ma, Object obj, Object[] args) throws InvocationTargetException {
 		try {
 			return ma.invoke(obj, args);
 		} catch (InvocationTargetException e) {
 			if (e.getCause() != null && e.getCause().getClass().getName().equals("java.lang.StringIndexOutOfBoundsException")) {
-				synchronized (JITHelpers.class) {
-					System.err.println("Caught java.lang.NullPointerException inside JITHelpers, thread "+Thread.currentThread().getName());
-					e.getCause().printStackTrace();
-					debugAgentRun(ma, obj, args);
+				boolean runDebugAgent = true;
+				if (runDebugAgent) {
+					synchronized (JITHelpers.class) {
+						System.err.println("Caught java.lang.StringIndexOutOfBoundsException inside JITHelpers, thread "+Thread.currentThread().getName());
+						e.getCause().printStackTrace();
+						debugAgentRun(ma, obj, args);
 				
-					System.err.println("Aborting JVM");
-					System.exit(1);
+						System.err.println("Aborting JVM");
+						System.exit(1);
+					}
 				}
 			}
+
 			throw e;
 		}
 	}
